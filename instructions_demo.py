@@ -2,6 +2,7 @@ import streamlit as st
 from elasticsearch import Elasticsearch
 import elasticsearch
 import time
+from datetime import datetime
 from elasticsearch_dsl import Search
 import os
 
@@ -35,7 +36,7 @@ def update_document_status(doc_id, status, retry_count=10):
     """Update the document's status."""
     for attempt in range(retry_count):
         try:
-            es.update(index=index_name, id=doc_id, body={"doc": {"status": status}})
+            es.update(index=index_name, id=doc_id, body={"doc": {"status": status, "last_modified": datetime.utcnow().isoformat()}})
             break
         except elasticsearch.ConflictError:
             if attempt < retry_count - 1:
@@ -73,7 +74,8 @@ def main():
                 es.update(index=index_name, id=doc.meta.id, body={
                     "doc": {
                         "instruction": {"instruction": instruction, "input": input_field, "output": output_field},
-                        "status": "ok"
+                        "status": "ok",
+                        "last_modified": datetime.utcnow().isoformat()
                     }
                 })
                 st.session_state.doc = None
