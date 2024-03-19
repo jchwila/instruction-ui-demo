@@ -15,7 +15,7 @@ es = Elasticsearch(
     api_key=api_key
 )
 
-index_name = "instructions"  
+index_name = "instructions-demo"  
 
 def get_next_document():
     """Query Elasticsearch for the next document with status 'new'."""
