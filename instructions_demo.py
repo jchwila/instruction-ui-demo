@@ -19,14 +19,11 @@ es = Elasticsearch(
 index_name = "instructions-demo"  
 
 def get_next_document():
-    """Query Elasticsearch for the next document with status 'new'."""
-    print('Fetching next document...')
     search = Search(using=es, index=index_name).query("match", status="new").sort("_doc")[:1]
     response = search.execute()
 
     if response.hits.total.value > 0:
         document_id = response[0].meta.id
-        print(document_id)
         update_document_status(document_id, status="in progress")
         return response[0]
     else:
@@ -46,7 +43,6 @@ def update_document_status(doc_id, status, retry_count=10):
                 raise
 
 def init_or_get_document():
-    """Initialize or retrieve the document from session state."""
     if 'doc' not in st.session_state or st.session_state.doc is None:
         st.session_state.doc = get_next_document()
         if st.session_state.doc:
@@ -54,7 +50,6 @@ def init_or_get_document():
             update_document_status(doc_id, status="in progress")
 
 def main():
-    """Streamlit app main function."""
     st.title("Alpaki wychodzą z szafy")
 
     if 'document_updated' not in st.session_state:
