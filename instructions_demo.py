@@ -117,7 +117,7 @@ def manage_instructions_tab():
         col1, col2 = st.columns(2)
         with col1:
             if st.button("OK"):
-                es.update(index=index_name, id=doc.meta.id, body={
+                es.update(index=INDEX_NAME, id=doc.meta.id, body={
                     "doc": {
                         "instruction": {"instruction": instruction, "input": input_field, "output": output_field},
                         "status": "ok",
