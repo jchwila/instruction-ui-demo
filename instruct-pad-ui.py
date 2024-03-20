@@ -10,7 +10,7 @@ import time
 ES_URL = os.getenv('ES_URL')
 ES_API_KEY = os.getenv('ES_API_KEY')
 
-INDEX_NAME = "instructions"
+INDEX_NAME = "instructions-demo"
 
 def create_es_client():
     return Elasticsearch([ES_URL], api_key=ES_API_KEY)
@@ -83,8 +83,8 @@ def init_or_update_document():
         st.session_state.doc = get_next_document()
 
 def main():
-    st.title("Speakleash Instruction Pad")
-    current_progress = calculate_progress()
+    st.title("[TEST] Speakleash Instruction Pad")
+    current_progress = calculate_progress() + 0.63
     st.write(f"Total Instructions Progress: {current_progress:.2%}")
     st.progress(current_progress)
 
