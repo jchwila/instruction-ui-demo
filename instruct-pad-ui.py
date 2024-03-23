@@ -96,12 +96,11 @@ def main():
 
 def manage_instructions_tab():
     if 'nickname' not in st.session_state:
-            nickname = st.text_input("Enter your nickname:")
-            if nickname:
-                st.session_state.nickname = nickname
-                init_or_update_document()
-                st.rerun()
-            return
+        if st.button("Get Next Instruction"):
+            nickname = st.experimental_user.email
+            init_or_get_document()
+            st.rerun()
+        return
 
     if 'document_updated' not in st.session_state:
         st.session_state.document_updated = False
