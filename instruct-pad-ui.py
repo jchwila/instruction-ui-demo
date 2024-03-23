@@ -98,7 +98,7 @@ def manage_instructions_tab():
     if 'nickname' not in st.session_state:
         if st.button("Get Next Instruction"):
             nickname = st.experimental_user.email
-            init_or_get_document()
+            init_or_update_document()
             st.rerun()
         return
 
@@ -107,6 +107,7 @@ def manage_instructions_tab():
 
     if st.session_state.doc and not st.session_state.document_updated:
         doc = st.session_state.doc
+        st.title(nickname)
         instruction = st.text_area("Instruction", value=doc.instruction.instruction, height=200)
         input_field = st.text_area("Input", value=doc.instruction.input, height=100)
         output_field = st.text_area("Output", value=doc.instruction.output, height=200)
