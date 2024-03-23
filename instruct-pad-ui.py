@@ -97,7 +97,7 @@ def main():
 def manage_instructions_tab():
     if 'nickname' not in st.session_state:
         if st.button("Get Next Instruction"):
-            nickname = st.experimental_user.email
+            st.session_state.nickname = st.experimental_user.email
             init_or_update_document()
             st.rerun()
         return
@@ -107,7 +107,7 @@ def manage_instructions_tab():
 
     if st.session_state.doc and not st.session_state.document_updated:
         doc = st.session_state.doc
-        st.title(nickname)
+        st.title(st.session_state.nickname)
         instruction = st.text_area("Instruction", value=doc.instruction.instruction, height=200)
         input_field = st.text_area("Input", value=doc.instruction.input, height=100)
         output_field = st.text_area("Output", value=doc.instruction.output, height=200)
@@ -151,7 +151,7 @@ def display_leaderboard_tab():
     leaderboard_data = leaderboard_df()
     fig = px.bar(leaderboard_data, x='Count', y='Name', orientation='h')
     fig.update_yaxes(categoryorder='total ascending')
-    fig.update_layout(xaxis_title='Instructions Count', yaxis_title='Nickname')
+    fig.update_layout(xaxis_title='Instructions Count', yaxis_title='User')
     st.plotly_chart(fig)
 
 if __name__ == "__main__":
