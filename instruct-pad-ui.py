@@ -19,18 +19,40 @@ es = create_es_client()
 
 
 PROGRESS_QUERY = {
-    "size": 0,  
-    "aggs": {
-        "results": {
-            "terms": {
-                "field": "status.keyword"
-            }
+  "size": 0,  
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "meta.script.keyword": st.session_state.selected_script
+          }
         }
+      ]
     }
+  },
+  "aggs": {
+    "results": {
+      "terms": {
+        "field": "status.keyword"
+      }
+    }
+  }
 }
 
 LEADERS_QUERY = {
-    "size": 0,  
+  "size": 0,  
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "meta.script.keyword": st.session_state.selected_script
+          }
+        }
+      ]
+    }
+  },
     "aggs": {
         "results": {
             "terms": {
