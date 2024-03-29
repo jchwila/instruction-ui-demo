@@ -40,6 +40,20 @@ LEADERS_QUERY = {
     }
 }
 
+SCRIPTS_QUERY={
+    "size": 0,
+    "aggs": {
+        "unique_scripts": {
+            "terms": {
+                "field": "meta.script.keyword",  
+                "size": 1000  
+            }
+        }
+    }
+}
+
+
+
 def fetch_aggregation_results(query):
     response = es.search(index=INDEX_NAME, body=query)
     buckets = response["aggregations"]["results"]["buckets"]
@@ -82,10 +96,20 @@ def init_or_update_document():
     if 'doc' not in st.session_state or st.session_state.doc is None:
         st.session_state.doc = get_next_document()
 
+def get_scripts():
+    response = es.search(index=INDEX_NAME, body=SCRIPTS_QUERY)
+    unique_scripts = [bucket['key'] for bucket in response['aggregations']['unique_scripts']['buckets']]
+    return unique_scripts
+
+
 def main():
     st.title("[TEST] Speakleash Instruction Pad")
+    if 'available_scripts' not in st.session_state:
+        st.session_state.available_scripts=get_scripts()
+        st.session_state.selected_script = st.session_state.available_scripts[0]
+
     current_progress = calculate_progress() + 0.63
-    st.write(f"Total Instructions Progress: {current_progress:.2%}")
+    st.write(f"Total Instructions Progress for {st.session_state.selected_script}: {current_progress:.2%}")
     st.progress(current_progress)
 
     tab1, tab2 = st.tabs(["Instructions", "Leaderboard"])
