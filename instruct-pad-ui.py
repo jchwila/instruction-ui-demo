@@ -161,6 +161,11 @@ def manage_instructions_tab():
     if st.session_state.document_updated:
         st.success("Instruction updated successfully!")
         if st.button("Get Next Instruction"):
+            st.session_state.selected_script = st.selectbox(
+            'Choose an option:',
+            st.session_state.available_scripts,
+            index=st.session_state.available_scripts.index(st.session_state.selected_script)
+            )
             st.session_state.document_updated = False
             st.session_state.doc = get_next_document()
             if st.session_state.doc:
