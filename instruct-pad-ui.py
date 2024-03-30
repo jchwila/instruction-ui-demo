@@ -7,8 +7,10 @@ from elasticsearch_dsl import Search
 import streamlit as st
 import time
 
-ES_URL = os.getenv('ES_URL')
-ES_API_KEY = os.getenv('ES_API_KEY')
+#ES_URL = os.getenv('ES_URL')
+#ES_API_KEY = os.getenv('ES_API_KEY')
+ES_API_KEY = "ZnpDOVZZNEJlYzFqWHk2cnF6WjY6ZjRqa3JEWXdTS1M4OXRlTldKaEpDZw=="
+ES_URL = "https://elastic.speakleash.org.pl:443"
 
 INDEX_NAME = "instructions-demo"
 
@@ -17,51 +19,14 @@ def create_es_client():
 
 es = create_es_client()
 
-selected_script = ''
+def anonymize_email(email):
+    local, domain = email.split('@')
+    domain_name, extension = domain.split('.')
+    anonymized_local = local[0] + "*" * (len(local) - 1)
+    anonymized_domain_name = domain_name[0] + "*" * (len(domain_name) - 1)
+    anonymized_email = f"{anonymized_local}@{anonymized_domain_name}.{extension}"
+    return anonymized_email
 
-PROGRESS_QUERY = {
-  "size": 0,  
-  "query": {
-    "bool": {
-      "filter": [
-        {
-          "term": {
-            "meta.script.keyword": selected_script
-          }
-        }
-      ]
-    }
-  },
-  "aggs": {
-    "results": {
-      "terms": {
-        "field": "status.keyword"
-      }
-    }
-  }
-}
-
-LEADERS_QUERY = {
-  "size": 0,  
-  "query": {
-    "bool": {
-      "filter": [
-        {
-          "term": {
-            "meta.script.keyword": selected_script
-          }
-        }
-      ]
-    }
-  },
-    "aggs": {
-        "results": {
-            "terms": {
-                "field": "updated_by.keyword"
-            }
-        }
-    }
-}
 
 SCRIPTS_QUERY={
     "size": 0,
@@ -82,18 +47,61 @@ def fetch_aggregation_results(query):
     buckets = response["aggregations"]["results"]["buckets"]
     return pd.DataFrame(buckets).rename(columns={'key': 'Name', 'doc_count': 'Count'}).sort_values(by='Count', ascending=False)
 
-def calculate_progress():    
+def calculate_progress(): 
+
+    PROGRESS_QUERY = {
+    "size": 0,  
+    "query": {
+        "bool": {
+        "filter": [
+            {
+            "term": {
+                "meta.script.keyword": st.session_state.selected_script
+            }
+            }
+        ]
+        }
+    },
+    "aggs": {
+        "results": {
+        "terms": {
+            "field": "status.keyword" }
+        }
+    }
+    }
     df = fetch_aggregation_results(PROGRESS_QUERY)
     total_docs = df['Count'].sum()
     total_except_new = df[df['Name'] != 'new']['Count'].sum()
     return total_except_new / total_docs if total_docs else 0
 
 def leaderboard_df():
+    LEADERS_QUERY = {
+    "size": 0,  
+    "query": {
+        "bool": {
+        "filter": [
+            {
+            "term": {
+                "meta.script.keyword": st.session_state.selected_script
+            }
+            }
+        ]
+        }
+    },
+        "aggs": {
+            "results": {
+                "terms": {
+                    "field": "updated_by.keyword"
+                }
+            }
+        }
+    }
     df = fetch_aggregation_results(LEADERS_QUERY)
+    df['Name'] = df['Name'].apply(lambda x: anonymize_email(x) if '@' in x and '.' in x else x)
     return df.sort_values(by='Count', ascending=False)
 
 def get_next_document():
-    search = Search(using=es, index=INDEX_NAME).query("match", status="new").sort("_doc")[:1]
+    search = Search(using=es, index=INDEX_NAME).query("bool", must=[{"match": {"status": "new"}}, {"match": {"meta.script.keyword": st.session_state.selected_script}}]).sort("_doc")[:1]
     response = search.execute()
     if response.hits.total.value > 0:
         document = response[0]
@@ -124,15 +132,19 @@ def get_scripts():
     unique_scripts = [bucket['key'] for bucket in response['aggregations']['unique_scripts']['buckets']]
     return unique_scripts
 
+def on_script_change():
+    st.rerun()
+
 
 def main():
     st.title("[TEST] Speakleash Instruction Pad")
     if 'available_scripts' not in st.session_state:
+        print(st.session_state)
         st.session_state.available_scripts=get_scripts()
-        selected_script = st.session_state.available_scripts[0]
+        st.session_state.selected_script = st.session_state.available_scripts[0]
 
     current_progress = calculate_progress() + 0.63
-    st.write(f"Total Instructions Progress for {selected_script}: {current_progress:.2%}")
+    st.write(f"Total Instructions Progress for {st.session_state.selected_script}: {current_progress:.2%}")
     st.progress(current_progress)
 
     tab1, tab2 = st.tabs(["Instructions", "Leaderboard"])
@@ -146,8 +158,12 @@ def manage_instructions_tab():
         selected_script = st.selectbox(
             'Choose an instruction set:',
             st.session_state.available_scripts,
-            index=st.session_state.available_scripts.index(selected_script)
+            index=st.session_state.available_scripts.index(st.session_state.selected_script)
             )
+        if st.session_state.selected_script != selected_script:
+            st.session_state.selected_script = selected_script
+            st.rerun()
+
         if st.button("Get Next Instruction"):
             st.session_state.nickname = st.experimental_user.email
             init_or_update_document()
@@ -189,10 +205,13 @@ def manage_instructions_tab():
     if st.session_state.document_updated:
         st.success("Instruction updated successfully!")
         selected_script = st.selectbox(
-            'Choose an option:',
+            'Choose an instruction set:',
             st.session_state.available_scripts,
-            index=st.session_state.available_scripts.index(selected_script)
+            index=st.session_state.available_scripts.index(st.session_state.selected_script)
             )
+        if st.session_state.selected_script != selected_script:
+            st.session_state.selected_script = selected_script
+            st.rerun()
         if st.button("Get Next Instruction"):            
             st.session_state.document_updated = False
             st.session_state.doc = get_next_document()
