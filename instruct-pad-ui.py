@@ -7,10 +7,9 @@ from elasticsearch_dsl import Search
 import streamlit as st
 import time
 
-#ES_URL = os.getenv('ES_URL')
-#ES_API_KEY = os.getenv('ES_API_KEY')
-ES_API_KEY = "ZnpDOVZZNEJlYzFqWHk2cnF6WjY6ZjRqa3JEWXdTS1M4OXRlTldKaEpDZw=="
-ES_URL = "https://elastic.speakleash.org.pl:443"
+ES_URL = os.getenv('ES_URL')
+ES_API_KEY = os.getenv('ES_API_KEY')
+
 
 INDEX_NAME = "instructions-demo"
 
