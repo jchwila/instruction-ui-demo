@@ -17,6 +17,7 @@ def create_es_client():
 
 es = create_es_client()
 
+selected_script = ''
 
 PROGRESS_QUERY = {
   "size": 0,  
@@ -25,7 +26,7 @@ PROGRESS_QUERY = {
       "filter": [
         {
           "term": {
-            "meta.script.keyword": st.session_state.selected_script
+            "meta.script.keyword": selected_script
           }
         }
       ]
@@ -47,7 +48,7 @@ LEADERS_QUERY = {
       "filter": [
         {
           "term": {
-            "meta.script.keyword": st.session_state.selected_script
+            "meta.script.keyword": selected_script
           }
         }
       ]
@@ -81,7 +82,7 @@ def fetch_aggregation_results(query):
     buckets = response["aggregations"]["results"]["buckets"]
     return pd.DataFrame(buckets).rename(columns={'key': 'Name', 'doc_count': 'Count'}).sort_values(by='Count', ascending=False)
 
-def calculate_progress():
+def calculate_progress():    
     df = fetch_aggregation_results(PROGRESS_QUERY)
     total_docs = df['Count'].sum()
     total_except_new = df[df['Name'] != 'new']['Count'].sum()
@@ -128,10 +129,10 @@ def main():
     st.title("[TEST] Speakleash Instruction Pad")
     if 'available_scripts' not in st.session_state:
         st.session_state.available_scripts=get_scripts()
-        st.session_state.selected_script = st.session_state.available_scripts[0]
+        selected_script = st.session_state.available_scripts[0]
 
     current_progress = calculate_progress() + 0.63
-    st.write(f"Total Instructions Progress for {st.session_state.selected_script}: {current_progress:.2%}")
+    st.write(f"Total Instructions Progress for {selected_script}: {current_progress:.2%}")
     st.progress(current_progress)
 
     tab1, tab2 = st.tabs(["Instructions", "Leaderboard"])
@@ -142,10 +143,10 @@ def main():
 
 def manage_instructions_tab():
     if 'nickname' not in st.session_state:
-        st.session_state.selected_script = st.selectbox(
-            'Choose an option:',
+        selected_script = st.selectbox(
+            'Choose an instruction set:',
             st.session_state.available_scripts,
-            index=st.session_state.available_scripts.index(st.session_state.selected_script)
+            index=st.session_state.available_scripts.index(selected_script)
             )
         if st.button("Get Next Instruction"):
             st.session_state.nickname = st.experimental_user.email
@@ -187,10 +188,10 @@ def manage_instructions_tab():
 
     if st.session_state.document_updated:
         st.success("Instruction updated successfully!")
-        st.session_state.selected_script = st.selectbox(
+        selected_script = st.selectbox(
             'Choose an option:',
             st.session_state.available_scripts,
-            index=st.session_state.available_scripts.index(st.session_state.selected_script)
+            index=st.session_state.available_scripts.index(selected_script)
             )
         if st.button("Get Next Instruction"):            
             st.session_state.document_updated = False
